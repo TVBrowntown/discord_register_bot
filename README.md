@@ -7,7 +7,8 @@ This is a Python bot that allows users to register a TrinityCore account by dire
 
 ## Requirements
 - Python3
-   - Packages: `mysql.connector`, `discord`
+   - Pip Packages: `mysql.connector`, `discord` via `pip install`
+   - Easy Linux Command that installs the packages for you: `pip install mysql.connector && pip install discord`
 
 ## Installation Instructions
 
