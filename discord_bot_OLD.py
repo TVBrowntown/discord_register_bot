@@ -16,7 +16,7 @@ discordServerID = int(config['discord']['targetServer'])
 logsChannelID = int(config['discord']['logsChannel'])
 
 
-client = discord.Client()
+client = discord.Client(intents=discord.Intents.default())
 
 @client.event
 async def on_ready():
