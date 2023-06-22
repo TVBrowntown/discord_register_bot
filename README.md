@@ -4,6 +4,7 @@ This is a Python bot that allows users to register a TrinityCore account by dire
 
 ### Current Compatibility
 - [TrinityCore 3.3.5](https://github.com/TrinityCore/TrinityCore)
+- [Azerothcore 3.3.5](https://github.com/AzerothCore/)
 
 ## Requirements
 - Python3
@@ -43,6 +44,21 @@ This is a Python bot that allows users to register a TrinityCore account by dire
    - `register <username> <password>`
 3. If any errors occur during registration, the bot will let the user know.
 
+### Changing Password via the Bot
+1. Ensure the bot is online.
+2. Direct message the bot using the following syntax:
+   - `account set password <newpassword> <newpassword>`
+3. If any errors occur, the bot will inform the user.
+
+### Worldserver.conf
+1. Set SOAP.Enabled = 1
+2. Edit the bot config file, [registration.cfg](/registration.cfg).
+   - The `[soap]` settings should match the following:
+   - `host` is the SOAP.IP in worldserver.conf
+   - `user` is a user capable of using account create, and set password commands in-game.
+   - `pass` is the password for that user.
+   - `port` is SOAP.Port in worldserver.conf
+
 ## To Do
 - Give a command to authorize GM accounts under the right circumstances
 - Add OS specific instructions
@@ -51,7 +67,7 @@ This is a Python bot that allows users to register a TrinityCore account by dire
 ## Disclaimer
 Anyone who uses this on their server is capable of logging passwords. Encourage your users to provide throwaway passwords or unique passwords. This is a potential way to steal credentials, so it's ethical that all users should be aware and instructed to create unique passwords for your server.
 
-There are two versions of the bot, OLD, and 2022. These versions have different password creation methods. If your server is newer than January 2022, please execute the 2022 file. If your compiled core is a version older than 2022, please execute the OLD .py script.
+This bot uses the SOAP API to register accounts. So long as your core can handle the above commands and can support SOAP, this bot will work with it.
 
 ## Contribute
 If you'd like to contribute, please fork and create a pull request. Your code will be reviewed and then merged with the main branch.
