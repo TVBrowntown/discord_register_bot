@@ -119,7 +119,69 @@ async def register(message):
     
 # account reset password function
 async def accountmgr_password(message):
-    print(message)
+    # account set password $newpassword $newpassword
+    messageParameters = message.content.split(" ")
+    print("resetting password")
+    
+    if len(messageParameters) != 5:
+        logString = ("[Account Management]: User : " + str(message.author) + " failed to CHANGE PASSWORD with following input : " + messageParameters[0] + " " + messageParameters[1] + " " + messageParameters[2] + " <REDACTED>.")
+        print(logString)
+        await send_message(logString, logsChannelID)
+        await message.author.send("[Account Management]: There was an error processing your command.\nPlease input `account set password <newPassword> <newPassword>`.\nExample: `account set password 123 123` would change any password associated with your discord to '123'.")
+        return
+    # does $newpassword = $newpassword?
+    newPass = messageParameters[3]
+    newPass_confirm = messageParameters[4]
+    if newPass != newPass_confirm:
+        logString = ("[Account Management]: User : " + str(message.author) + " failed to CHANGE PASSWORD. Variables `$newpassword` and `$newpassword` do not match.")
+        print(logString)
+        await send_message(logString, logsChannelID)
+        await message.author.send("[Account Management]: There was an error processing your command.\nPlease input `account set password <newPassword> <newPassword>`.\nExample: `account set password 123 123` would change any password associated with your discord to '123'.")
+        return
+    
+    discordid = str(message.author.id).upper() # Does this discord user have an account?
+    connection = mysql.connector.connect(user=mysqlUser, password=mysqlPass, host=mysqlHost, database=mysqlauthDB, port=mysqlPort) # db connection
+    cursor = connection.cursor() # our cursor that selects n stuff
+    registrationSQL = "SELECT username, email FROM account WHERE email = %s" # check if email(discordid) exists
+    checkval = [
+    discordid,
+    ]
+    cursor.execute(registrationSQL,checkval)
+    result = cursor.fetchall()
+    connection.commit() # We need this or the script will cache the query.
+    if len(result) == 0: # if 0, then no accounts are associated with discordid
+        logString = ("[Account Management]: User : " + str(message.author) + " failed to CHANGE PASSWORD. No email associated with the DiscordID : " + discordid + ".")
+        print(logString)
+        await send_message(logString, logsChannelID)
+        await message.author.send("[Account Management]: There was an error processing your command.\nNo account associated with your discord exists.")        
+        return
+    # perform SOAP command to reset password
+    account = result[0][0]
+    soap_url = "http://" + soapUser + ":"  + soapPass + "@" + soapHost + ":" + soapPort + "/"
+    concat_string = "account set password " + account + " " + newPass + " " + newPass_confirm
+    payload = """<SOAP-ENV:Envelope  
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" 
+    xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" 
+    xmlns:xsi="http://www.w3.org/1999/XMLSchema-instance" 
+    xmlns:xsd="http://www.w3.org/1999/XMLSchema" 
+    xmlns:ns1="urn:AC">
+    <SOAP-ENV:Body>
+	<ns1:executeCommand>
+	    <command>""" + concat_string + """</command>
+	</ns1:executeCommand>
+    </SOAP-ENV:Body>
+    </SOAP-ENV:Envelope>"""
+    # headers
+    headers = {
+        'Content-Type': 'text/xml; charset=utf-8'
+    }
+    # POST request
+    response = requests.request("POST", soap_url, headers=headers, data=payload)
+    print(response.text)
+    logString = ("[Account Management]: User : " + str(message.author) + " has successfully performed CHANGE PASSWORD with account : " + account + ".")
+    print(logString)
+    await send_message(logString, logsChannelID)
+    await message.author.send("[Account Management]: Password has been successfully reset.")    
     return
 @client.event
 async def on_message(message):
@@ -134,11 +196,11 @@ async def on_message(message):
     if message.author.bot == True:
         return
     
-    if message.content.startswith('register '):
+    if message.content.startswith('register'):
         await register(message)
         return
     
-    if message.content.startswith('account set password '):
+    if message.content.startswith('account set password'):
         await accountmgr_password(message)
         return
 client.run(config['discord']['apiKey'])
