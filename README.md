@@ -4,6 +4,7 @@ This is a Python bot that allows users to register a TrinityCore account by dire
 
 ### Current Compatibility
 - [TrinityCore 3.3.5](https://github.com/TrinityCore/TrinityCore)
+- [Azerothcore 3.3.5](https://github.com/AzerothCore/)
 
 ## Requirements
 - Python3
