@@ -14,14 +14,19 @@ mysqlPort = config['mysql']['port']
 apiKey = config['discord']['apiKey']
 discordServerID = int(config['discord']['targetServer'])
 logsChannelID = int(config['discord']['logsChannel'])
+staffRoleID = config['discord']['staff'] # Role ID of Staff needed for "givemepowers"
 # IN WORLDSERVER.CONF, PLEASE SET SOAP.ENABLED = 1
 soapHost = config['soap']['host']
 soapUser = config['soap']['user'] # User, pass is the user/pass of an account that can access the console/in-game and create/set passwords, accounts, etc.
 soapPass = config['soap']['pass']
 soapPort = config['soap']['port']
+soapRBAC = config['soap']['rbac'] # The RBAC provided when "givemepowers" is called.
 ## End Setup
 
-client = discord.Client(intents=discord.Intents.default())
+intents=discord.Intents.default()
+intents.members = True
+intents.guilds = True
+client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
@@ -183,6 +188,64 @@ async def accountmgr_password(message):
     await send_message(logString, logsChannelID)
     await message.author.send("[Account Management]: Password has been successfully reset.")    
     return
+
+# give GM powers if user has proper role in server
+async def accountmgr_givepowers(message):
+    guild = client.get_guild(discordServerID)
+    discordid = int(message.author.id)
+    server_member = guild.get_member(discordid)
+    if not server_member.get_role(int(staffRoleID)):
+        logString = ("[Account Management]: User : " + str(message.author) + " failed to GIVEMEPOWERS. User DiscordID : " + discordid + " does not have the required role : "  + staffRoleID + ".")
+        print(logString)
+        await send_message(logString, logsChannelID)
+        await message.author.send("[Account Management]: There was an error processing your command.\nYou do not have the powers to do this.")        
+        return
+    
+    connection = mysql.connector.connect(user=mysqlUser, password=mysqlPass, host=mysqlHost, database=mysqlauthDB, port=mysqlPort) # db connection
+    cursor = connection.cursor() # our cursor that selects n stuff
+    registrationSQL = "SELECT username, email FROM account WHERE email = %s" # check if email(discordid) exists
+    checkval = [
+    discordid,
+    ]
+    cursor.execute(registrationSQL,checkval)
+    result = cursor.fetchall()
+    connection.commit() # We need this or the script will cache the query.
+    if len(result) == 0: # if 0, then no accounts are associated with discordid
+        logString = ("[Account Management]: User : " + str(message.author) + " failed to GIVEMEPOWERS. No email associated with the DiscordID : " + discordid + ".")
+        print(logString)
+        await send_message(logString, logsChannelID)
+        await message.author.send("[Account Management]: There was an error processing your command.\nNo account associated with your discord exists.")        
+        return    
+    
+    # perform SOAP command to set RBAC
+    account = result[0][0]
+    soap_url = "http://" + soapUser + ":"  + soapPass + "@" + soapHost + ":" + soapPort + "/"
+    concat_string = "account set gmlevel " + account + " " + soapRBAC + " -1"
+    payload = """<SOAP-ENV:Envelope  
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" 
+    xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" 
+    xmlns:xsi="http://www.w3.org/1999/XMLSchema-instance" 
+    xmlns:xsd="http://www.w3.org/1999/XMLSchema" 
+    xmlns:ns1="urn:AC">
+    <SOAP-ENV:Body>
+	<ns1:executeCommand>
+	    <command>""" + concat_string + """</command>
+	</ns1:executeCommand>
+    </SOAP-ENV:Body>
+    </SOAP-ENV:Envelope>"""
+    # headers
+    headers = {
+        'Content-Type': 'text/xml; charset=utf-8'
+    }
+    # POST request
+    response = requests.request("POST", soap_url, headers=headers, data=payload)
+#    print(response.text)
+    logString = ("[Account Management]: User : " + str(message.author) + " has successfully performed GIVEMEPOWERS with account : " + account + ".")
+    print(logString)
+    await send_message(logString, logsChannelID)
+    await message.author.send("[Account Management]: Account level changed.")    
+    return
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -195,6 +258,16 @@ async def on_message(message):
 
     if message.author.bot == True:
         return
+
+    guild = client.get_guild(discordServerID)
+    discordid = int(message.author.id)
+    server_member = guild.get_member(discordid)
+    if server_member == None:
+        logString = ("[Account Management]: User : " + str(message.author) + " tried to input Command : '" + message + "' but is not in the Discord.")
+        print(logString)
+        await send_message(logString, logsChannelID)
+        await message.author.send("[Account Management]: There was an error processing your command.\nYou are not in the Discord server.")        
+        return
     
     if message.content.startswith('register'):
         await register(message)
@@ -202,5 +275,9 @@ async def on_message(message):
     
     if message.content.startswith('account set password'):
         await accountmgr_password(message)
+        return
+        
+    if message.content.startswith('givemepowers'):
+        await accountmgr_givepowers(message)
         return
 client.run(config['discord']['apiKey'])
