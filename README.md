@@ -34,30 +34,33 @@ This is a Python bot that allows users to register a TrinityCore account by dire
       - `apiKey` is the bot `Token` generated above.
       - `targetServer` is the [ID of a Discord server](https://www.remote.tools/remote-work/how-to-find-discord-id) the bot is in.
       - `logsChannel` is the [ID of a Discord channel](https://www.remote.tools/remote-work/how-to-find-discord-id) in the server the bot is in.
-2. Run the bot.
+      - `staff` is the [ID of a Discord role](https://www.remote.tools/remote-work/how-to-find-discord-id) required for "givemepowers"
+   - The `[soap]` settings should match the following:
+      - `host` is the SOAP.IP in worldserver.conf
+      - `user` is a user capable of using account create, and set password commands in-game.
+      - `pass` is the password for that user.
+      - `port` is SOAP.Port in worldserver.conf
+      - `soapRBAC` is the RBAC role provided when "givemepowers" is called.
+2. Edit the worldserver config file, worldserver.conf
+   - 1. Set SOAP.Enabled = 1
+3. Run the bot.
    - Ensure [Requirements](#requirements) are met.
    - Run `discord_bot.py`
 
 ### Registering via the Bot
-1. Ensure the bot is online.
-2. Direct message the bot using the following syntax:
+1. Direct message the bot using the following syntax:
    - `register <username> <password>`
-3. If any errors occur during registration, the bot will let the user know.
+2. If any errors occur during registration, the bot will let the user know.
 
 ### Changing Password via the Bot
-1. Ensure the bot is online.
-2. Direct message the bot using the following syntax:
+1. Direct message the bot using the following syntax:
    - `account set password <newpassword> <newpassword>`
-3. If any errors occur, the bot will inform the user.
+2. If any errors occur, the bot will inform the user.
 
-### Worldserver.conf
-1. Set SOAP.Enabled = 1
-2. Edit the bot config file, [registration.cfg](/registration.cfg).
-   - The `[soap]` settings should match the following:
-   - `host` is the SOAP.IP in worldserver.conf
-   - `user` is a user capable of using account create, and set password commands in-game.
-   - `pass` is the password for that user.
-   - `port` is SOAP.Port in worldserver.conf
+### Distributing Staff Powers via the Bot
+1. Direct message the bot using the following syntax:
+   - `givemepowers`
+2. If any errors occur, the bot will inform the user.
 
 ## To Do
 - Give a command to authorize GM accounts under the right circumstances
